@@ -60,103 +60,104 @@
     <button id="download" style="display: none;">Download Image</button>
 
     <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
-        const processedCanvas = document.getElementById('processedCanvas');
-        const processedContext = processedCanvas.getContext('2d');
-        const captureButton = document.getElementById('capture');
-        const downloadButton = document.getElementById('download');
-        const message = document.getElementById('message');
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            const processedCanvas = document.getElementById('processedCanvas');
+            const processedContext = processedCanvas.getContext('2d');
+            const captureButton = document.getElementById('capture');
+            const downloadButton = document.getElementById('download');
+            const message = document.getElementById('message');
 
-        // Access the device camera and stream to video element
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then((stream) => {
-                video.srcObject = stream;
-            })
-            .catch((error) => {
-                console.error("Error accessing the camera: ", error);
-                alert("Could not access the camera. Please allow camera access and try again.");
+            // Access the device camera and stream to video element
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    video.srcObject = stream;
+                })
+                .catch((error) => {
+                    console.error("Error accessing the camera: ", error);
+                    alert("Could not access the camera. Please allow camera access and try again.");
+                });
+
+            // Capture the image when button is clicked
+            captureButton.addEventListener('click', () => {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                applyOilPaintEffect();
             });
 
-        // Capture the image when button is clicked
-        captureButton.addEventListener('click', () => {
-            // Draw the video frame to the canvas
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            applyOilPaintEffect();
-        });
+            // Apply an oil paint effect to the captured image
+            function applyOilPaintEffect() {
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
 
-        // Apply an oil paint effect to the captured image
-        function applyOilPaintEffect() {
-            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
+                // Simple oil paint effect (using a blur for demonstration)
+                const blurSize = 3; // Size of the blur kernel
+                const blurredData = blurImageData(imageData);
 
-            // Simple oil paint effect (using a blur for demonstration)
-            const blurSize = 3; // Size of the blur kernel
-            const blurredData = blurImageData(imageData);
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = blurredData[i];
+                    data[i + 1] = blurredData[i + 1];
+                    data[i + 2] = blurredData[i + 2];
+                }
 
-            for (let i = 0; i < data.length; i += 4) {
-                data[i] = blurredData[i];
-                data[i + 1] = blurredData[i + 1];
-                data[i + 2] = blurredData[i + 2];
+                processedContext.putImageData(imageData, 0, 0);
+                processedCanvas.style.display = 'block';
+                processedCanvas.width = 160; // Resize to passport size (160x240 px)
+                processedCanvas.height = 240;
+
+                // Show the message and download button after processing the image
+                message.innerText = "Happy Friendship Day!";
+                message.style.display = 'block';
+                downloadButton.style.display = 'inline-block';
             }
 
-            processedContext.putImageData(imageData, 0, 0);
-            processedCanvas.style.display = 'block';
-            processedCanvas.width = 160; // Resize to passport size (160x240 px)
-            processedCanvas.height = 240;
+            // Simple box blur function
+            function blurImageData(imageData) {
+                const width = imageData.width;
+                const height = imageData.height;
+                const data = imageData.data;
+                const blurredData = new Uint8ClampedArray(data.length);
 
-            // Show the message and download button after processing the image
-            message.innerText = "Happy Friendship Day!";
-            message.style.display = 'block';
-            downloadButton.style.display = 'inline-block';
-        }
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        let r = 0, g = 0, b = 0, a = 0;
+                        let count = 0;
 
-        // Simple box blur function
-        function blurImageData(imageData) {
-            const width = imageData.width;
-            const height = imageData.height;
-            const data = imageData.data;
-            const blurredData = new Uint8ClampedArray(data.length);
+                        for (let ky = -blurSize; ky <= blurSize; ky++) {
+                            for (let kx = -blurSize; kx <= blurSize; kx++) {
+                                const ny = y + ky;
+                                const nx = x + kx;
 
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    let r = 0, g = 0, b = 0, a = 0;
-                    let count = 0;
-
-                    for (let ky = -blurSize; ky <= blurSize; ky++) {
-                        for (let kx = -blurSize; kx <= blurSize; kx++) {
-                            const ny = y + ky;
-                            const nx = x + kx;
-
-                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                                const index = (ny * width + nx) * 4;
-                                r += data[index];
-                                g += data[index + 1];
-                                b += data[index + 2];
-                                a += data[index + 3];
-                                count++;
+                                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                    const index = (ny * width + nx) * 4;
+                                    r += data[index];
+                                    g += data[index + 1];
+                                    b += data[index + 2];
+                                    a += data[index + 3];
+                                    count++;
+                                }
                             }
                         }
-                    }
 
-                    const index = (y * width + x) * 4;
-                    blurredData[index] = r / count;
-                    blurredData[index + 1] = g / count;
-                    blurredData[index + 2] = b / count;
-                    blurredData[index + 3] = a / count;
+                        const index = (y * width + x) * 4;
+                        blurredData[index] = r / count;
+                        blurredData[index + 1] = g / count;
+                        blurredData[index + 2] = b / count;
+                        blurredData[index + 3] = a / count;
+                    }
                 }
+
+                return blurredData;
             }
 
-            return blurredData;
-        }
-
-        // Download the processed image
-        downloadButton.addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.download = 'friendship_day_image.png';
-            link.href = processedCanvas.toDataURL();
-            link.click();
+            // Download the processed image
+            downloadButton.addEventListener('click', () => {
+                const link = document.createElement('a');
+                link.download = 'friendship_day_image.png';
+                link.href = processedCanvas.toDataURL();
+                link.click();
+            });
         });
     </script>
 </body>
