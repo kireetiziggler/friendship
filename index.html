@@ -43,6 +43,7 @@
             font-size: 18px;
             color: #fff;
             margin-top: 20px;
+            display: none; /* Hide message initially */
         }
     </style>
 </head>
@@ -80,6 +81,7 @@
 
         // Capture the image when button is clicked
         captureButton.addEventListener('click', () => {
+            // Draw the video frame to the canvas
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             applyOilPaintEffect();
         });
@@ -104,7 +106,9 @@
             processedCanvas.width = 160; // Resize to passport size (160x240 px)
             processedCanvas.height = 240;
 
+            // Show the message and download button after processing the image
             message.innerText = "Happy Friendship Day!";
+            message.style.display = 'block';
             downloadButton.style.display = 'inline-block';
         }
 
