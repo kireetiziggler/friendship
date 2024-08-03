@@ -10,28 +10,38 @@
             text-align: center;
             margin: 0;
             padding: 20px;
-            background-color: #f0f8ff;
+            background: linear-gradient(to right, #ff7e5f, #feb47b); /* Gradient background */
         }
         h1 {
-            color: #ff4500;
+            color: #fff;
         }
-        #video, #canvas, #sketchCanvas {
+        #video, #canvas, #processedCanvas {
             margin: 20px 0;
         }
         #capture, #download {
-            background-color: #ff4500;
-            color: white;
+            background-color: #fff;
+            color: #ff7e5f;
             padding: 10px 20px;
             border: none;
             cursor: pointer;
             font-size: 16px;
             margin: 10px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
         #capture:hover, #download:hover {
             background-color: #ff6347;
+            color: white;
         }
-        #sketchCanvas {
+        #processedCanvas {
             display: none;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        #message {
+            font-size: 18px;
+            color: #fff;
             margin-top: 20px;
         }
     </style>
@@ -43,17 +53,17 @@
     <br>
     <button id="capture">Capture</button>
     <br>
-    <canvas id="canvas" width="320" height="240"></canvas>
-    <canvas id="sketchCanvas" width="320" height="240"></canvas>
+    <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+    <canvas id="processedCanvas" width="160" height="240"></canvas>
     <h2 id="message"></h2>
-    <button id="download" style="display: none;">Download Sketch</button>
+    <button id="download" style="display: none;">Download Image</button>
 
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const context = canvas.getContext('2d');
-        const sketchCanvas = document.getElementById('sketchCanvas');
-        const sketchContext = sketchCanvas.getContext('2d');
+        const processedCanvas = document.getElementById('processedCanvas');
+        const processedContext = processedCanvas.getContext('2d');
         const captureButton = document.getElementById('capture');
         const downloadButton = document.getElementById('download');
         const message = document.getElementById('message');
@@ -71,52 +81,30 @@
         // Capture the image when button is clicked
         captureButton.addEventListener('click', () => {
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            applySketchEffect();
+            applyOilPaintEffect();
         });
 
-        // Apply sketch effect to the captured image
-        function applySketchEffect() {
-            // Get the image data from the original canvas
+        // Apply an oil paint effect to the captured image
+        function applyOilPaintEffect() {
             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
 
-            // Convert the image to grayscale
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                const avg = (r + g + b) / 3;
-
-                data[i] = avg;     // Red channel
-                data[i + 1] = avg; // Green channel
-                data[i + 2] = avg; // Blue channel
-            }
-
-            // Invert the grayscale image
-            for (let i = 0; i < data.length; i += 4) {
-                data[i] = 255 - data[i];
-                data[i + 1] = 255 - data[i + 1];
-                data[i + 2] = 255 - data[i + 2];
-            }
-
-            // Apply a simple box blur to the inverted image
+            // Simple oil paint effect (using a blur for demonstration)
+            const blurSize = 3; // Size of the blur kernel
             const blurredData = blurImageData(imageData);
 
-            // Combine the inverted, blurred image with the original to create the sketch effect
             for (let i = 0; i < data.length; i += 4) {
-                data[i] = Math.min(255, 255 * data[i] / (255 - blurredData[i]));
-                data[i + 1] = Math.min(255, 255 * data[i + 1] / (255 - blurredData[i + 1]));
-                data[i + 2] = Math.min(255, 255 * data[i + 2] / (255 - blurredData[i + 2]));
+                data[i] = blurredData[i];
+                data[i + 1] = blurredData[i + 1];
+                data[i + 2] = blurredData[i + 2];
             }
 
-            // Draw the sketch on the sketchCanvas
-            sketchContext.putImageData(imageData, 0, 0);
-            sketchCanvas.style.display = 'block';
+            processedContext.putImageData(imageData, 0, 0);
+            processedCanvas.style.display = 'block';
+            processedCanvas.width = 160; // Resize to passport size (160x240 px)
+            processedCanvas.height = 240;
 
-            // Display the message
             message.innerText = "Happy Friendship Day!";
-            
-            // Show the download button
             downloadButton.style.display = 'inline-block';
         }
 
@@ -126,8 +114,6 @@
             const height = imageData.height;
             const data = imageData.data;
             const blurredData = new Uint8ClampedArray(data.length);
-
-            const blurSize = 3; // Size of the blur kernel
 
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
@@ -161,11 +147,11 @@
             return blurredData;
         }
 
-        // Download the sketched image
+        // Download the processed image
         downloadButton.addEventListener('click', () => {
             const link = document.createElement('a');
-            link.download = 'friendship_day_sketch.png';
-            link.href = sketchCanvas.toDataURL();
+            link.download = 'friendship_day_image.png';
+            link.href = processedCanvas.toDataURL();
             link.click();
         });
     </script>
