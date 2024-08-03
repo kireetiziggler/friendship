@@ -91,22 +91,19 @@
                 const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imageData.data;
 
-                // Simple oil paint effect (using a blur for demonstration)
-                const blurSize = 5; // Increase size for stronger effect
+                // Apply a simple oil paint effect (blur and adjust color)
+                const blurSize = 5; // Size of the blur kernel
                 const blurredData = blurImageData(imageData);
 
-                for (let i = 0; i < data.length; i += 4) {
-                    data[i] = blurredData[i];
-                    data[i + 1] = blurredData[i + 1];
-                    data[i + 2] = blurredData[i + 2];
-                }
-
-                processedContext.putImageData(imageData, 0, 0);
-                processedCanvas.style.display = 'block';
-                processedCanvas.width = 160; // Resize to passport size (160x240 px)
+                // Resize to passport size
+                processedCanvas.width = 160;
                 processedCanvas.height = 240;
 
-                // Show the message and download button after processing the image
+                // Draw the blurred image on the processedCanvas
+                processedContext.putImageData(new ImageData(blurredData, canvas.width, canvas.height), 0, 0);
+                processedContext.drawImage(canvas, 0, 0, 160, 240);
+
+                // Display the message and download button after processing the image
                 message.innerText = "Happy Friendship Day!";
                 message.style.display = 'block';
                 downloadButton.style.display = 'inline-block';
