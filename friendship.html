@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Friendship Day</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f8ff;
+        }
+        h1 {
+            color: #ff4500;
+        }
+        #video, #canvas, #sketchCanvas {
+            margin: 20px 0;
+        }
+        #capture, #download {
+            background-color: #ff4500;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        #capture:hover, #download:hover {
+            background-color: #ff6347;
+        }
+        #sketchCanvas {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Happy Friendship Day!</h1>
+    <p>Click the button below to capture your image:</p>
+    <video id="video" width="320" height="240" autoplay></video>
+    <br>
+    <button id="capture">Capture</button>
+    <br>
+    <canvas id="canvas" width="320" height="240"></canvas>
+    <canvas id="sketchCanvas" width="320" height="240"></canvas>
+    <h2 id="message"></h2>
+    <button id="download" style="display: none;">Download Sketch</button>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const sketchCanvas = document.getElementById('sketchCanvas');
+        const sketchContext = sketchCanvas.getContext('2d');
+        const captureButton = document.getElementById('capture');
+        const downloadButton = document.getElementById('download');
+        const message = document.getElementById('message');
+
+        // Access the device camera and stream to video element
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+            })
+            .catch((error) => {
+                console.error("Error accessing the camera: ", error);
+                alert("Could not access the camera. Please allow camera access and try again.");
+            });
+
+        // Capture the image when button is clicked
+        captureButton.addEventListener('click', () => {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            applySketchEffect();
+        });
+
+        // Apply sketch effect to the captured image
+        function applySketchEffect() {
+            // Get the image data from the original canvas
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // Convert the image to grayscale
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const avg = (r + g + b) / 3;
+
+                data[i] = avg;     // Red channel
+                data[i + 1] = avg; // Green channel
+                data[i + 2] = avg; // Blue channel
+            }
+
+            // Invert the grayscale image
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = 255 - data[i];
+                data[i + 1] = 255 - data[i + 1];
+                data[i + 2] = 255 - data[i + 2];
+            }
+
+            // Apply a simple box blur to the inverted image
+            const blurredData = blurImageData(imageData);
+
+            // Combine the inverted, blurred image with the original to create the sketch effect
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = Math.min(255, 255 * data[i] / (255 - blurredData[i]));
+                data[i + 1] = Math.min(255, 255 * data[i + 1] / (255 - blurredData[i + 1]));
+                data[i + 2] = Math.min(255, 255 * data[i + 2] / (255 - blurredData[i + 2]));
+            }
+
+            // Draw the sketch on the sketchCanvas
+            sketchContext.putImageData(imageData, 0, 0);
+            sketchCanvas.style.display = 'block';
+
+            // Display the message
+            message.innerText = "Happy Friendship Day!";
+            
+            // Show the download button
+            downloadButton.style.display = 'inline-block';
+        }
+
+        // Simple box blur function
+        function blurImageData(imageData) {
+            const width = imageData.width;
+            const height = imageData.height;
+            const data = imageData.data;
+            const blurredData = new Uint8ClampedArray(data.length);
+
+            const blurSize = 3; // Size of the blur kernel
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let r = 0, g = 0, b = 0, a = 0;
+                    let count = 0;
+
+                    for (let ky = -blurSize; ky <= blurSize; ky++) {
+                        for (let kx = -blurSize; kx <= blurSize; kx++) {
+                            const ny = y + ky;
+                            const nx = x + kx;
+
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                const index = (ny * width + nx) * 4;
+                                r += data[index];
+                                g += data[index + 1];
+                                b += data[index + 2];
+                                a += data[index + 3];
+                                count++;
+                            }
+                        }
+                    }
+
+                    const index = (y * width + x) * 4;
+                    blurredData[index] = r / count;
+                    blurredData[index + 1] = g / count;
+                    blurredData[index + 2] = b / count;
+                    blurredData[index + 3] = a / count;
+                }
+            }
+
+            return blurredData;
+        }
+
+        // Download the sketched image
+        downloadButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'friendship_day_sketch.png';
+            link.href = sketchCanvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>
